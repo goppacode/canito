@@ -35,7 +35,7 @@ def main():
 
 def append_to_playlist(s, mpv_file):
     mpv_file = mpv_file.replace('"', '\\"')
-    mpv_command = 'loadfile "{}" append\n'.format(mpv_file)
+    mpv_command = 'loadfile "{}" append-play\n'.format(mpv_file)
     s.sendall(mpv_command.encode())
 
 def spawn_new_player(mpv_file):
@@ -44,6 +44,7 @@ def spawn_new_player(mpv_file):
         mpv_file,
         "--no-video",
         "--term-playing-msg='${media-title}'",
+        "--keep-open=yes",
         "--input-ipc-server={}".format(SOCKET_NAME)
     ]
     # start mpv and replace this current process
