@@ -14,3 +14,4 @@ It then spawns an instance of mpv to play the found song, or – if already runn
 
 Canito is written in Python 3.
 You need to have both [mpv](https://mpv.io) and [youtube-dl](https://rg3.github.io/youtube-dl/) in your path.
+Youtube-dl needs to be installed as a python library.
