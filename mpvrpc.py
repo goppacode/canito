@@ -20,9 +20,6 @@ SOCKET_NAME = "/tmp/canito.socket"
 
 class MPV:
 
-    def __main__(self, ):
-        pass
-
     def __enter__(self):
         self.s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         return self
@@ -38,7 +35,7 @@ class MPV:
             return False
         except ConnectionRefusedError:
             return False
-    
+
     def spawn_new_player(self, mpv_file):
         """
         Replaces this process with an mpv process playing the given file.
@@ -55,5 +52,21 @@ class MPV:
         os.execvp(mpv_invocation[0], mpv_invocation)
     
     def append_to_playlist(self, mpv_file):
-        mpv_command = 'loadfile "{}" append-play\n'.format(mpv_file)
-        self.s.sendall(mpv_command.encode())
+        MPV_Message(self.s).loadfile(mpv_file, "append-play")
+
+class MPV_Message:
+    def __init__(self, s):
+        self.s = s
+    
+    def __getattr__(self, command):
+        def send(*param, request_id=None):
+            cmd = MPV_Message._construct_command(self, command, *param, request_id=request_id)
+            self.s.sendall(cmd.encode())
+        return send
+
+    @staticmethod
+    def _construct_command(self, *args, request_id):
+        message = {"command": args}
+        if request_id:
+            message["request_id"] = request_id
+        return json.dumps(message) + "\n"
