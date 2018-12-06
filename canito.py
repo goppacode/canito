@@ -21,15 +21,18 @@ from mpvrpc import MPV
 
 def main():
     user_search = ' '.join(sys.argv[1:])
-    url = Searcher.search(user_search)
+    result = Searcher.search(user_search)
+
+    if result is None:
+        sys.exit("No result found.")
 
     with MPV() as m:
         player_connected = m.connect_player()
         if player_connected:
-            print("Adding {} to the playlist.".format(user_search))
-            m.append_to_playlist(url)
+            print("Adding to the playlist:\n{}".format(result))
+            m.append_to_playlist(result.location)
         else:
-            m.spawn_new_player(url)
+            m.spawn_new_player(result.location)
 
 if __name__ == "__main__":
     main()
