@@ -14,10 +14,11 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+import os
 import sys
 
 from ytsearch import Searcher
-from mpvrpc import MPV
+from mpvrpc import MPV, TMUX_SESSION
 
 def main():
     user_search = ' '.join(sys.argv[1:])
@@ -29,10 +30,23 @@ def main():
     with MPV() as m:
         player_connected = m.connect_player()
         if player_connected:
-            print("Adding to the playlist:\n{}".format(result))
-            m.append_to_playlist(result.location)
+            m.append_to_playlist(result)
         else:
-            m.spawn_new_player(result.location)
+            m.spawn_new_player()
+            m.append_to_playlist(result)
+
+    replace_with_tmux()
+
+def replace_with_tmux():
+    """
+    attach tmux and replace current process
+    """
+    tmux_invocation = [
+        "tmux",
+        "attach",
+        "-t" + TMUX_SESSION
+    ]
+    os.execvp(tmux_invocation[0], tmux_invocation)
 
 if __name__ == "__main__":
     main()

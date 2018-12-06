@@ -15,8 +15,10 @@
 import json
 import os
 import socket
+from time import sleep
 
 SOCKET_NAME = "/tmp/canito.socket"
+TMUX_SESSION = "canito"
 
 class MPV:
 
@@ -36,23 +38,28 @@ class MPV:
         except ConnectionRefusedError:
             return False
 
-    def spawn_new_player(self, mpv_file):
+    def spawn_new_player(self):
         """
-        Replaces this process with an mpv process playing the given file.
+        Start a tmux session with mpv running and connect to the socket
         """
-        mpv_invocation = [
+        tmux_invocation = [
+            "tmux",
+            "new-session",
+            "-s" + TMUX_SESSION,
+            "-d",
             "mpv",
-            mpv_file,
             "--no-video",
             "--term-playing-msg='${media-title}'",
-            "--keep-open=yes",
-            "--input-ipc-server={}".format(SOCKET_NAME)
+            "--idle",
+            "--input-ipc-server=" + SOCKET_NAME,
         ]
-        # start mpv and replace this current process
-        os.execvp(mpv_invocation[0], mpv_invocation)
-    
-    def append_to_playlist(self, mpv_file):
-        MPV_Message(self.s).loadfile(mpv_file, "append-play")
+        # start tmux with mpv and wait until ready
+        os.spawnvp(os.P_WAIT, tmux_invocation[0], tmux_invocation)
+        while not self.connect_player():
+                sleep(0.1)
+
+    def append_to_playlist(self, result):
+        MPV_Message(self.s).loadfile(result.location, "append-play")
 
 class MPV_Message:
     def __init__(self, s):
