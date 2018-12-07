@@ -49,7 +49,6 @@ class MPV:
             "-d",
             "mpv",
             "--no-video",
-            "--term-playing-msg='${media-title}'",
             "--idle",
             "--input-ipc-server=" + SOCKET_NAME,
         ]
@@ -59,8 +58,14 @@ class MPV:
                 sleep(0.1)
 
     def append_to_playlist(self, result):
-        MPV_Message(self.s).loadfile(result.location, "append-play")
-        MPV_Message(self.s).print_text("Added to playlist")
+        result_msg = self.prettify_result(result)
+        MPV_Message(self.s).loadfile(result.location, "append-play", "term-playing-msg=\"{}\"".format(result_msg))
+        MPV_Message(self.s).print_text("Added to playlist: {}".format(result_msg))
+
+    def prettify_result(self, result):
+        if result.artist is None:
+            return "'{}'".format(result.name)
+        return "'{}' by '{}'".format(result.name, result.artist)
 
 class MPV_Message:
     def __init__(self, s):
