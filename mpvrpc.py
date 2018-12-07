@@ -60,15 +60,31 @@ class MPV:
 
     def append_to_playlist(self, result):
         MPV_Message(self.s).loadfile(result.location, "append-play")
+        MPV_Message(self.s).print_text("Added to playlist")
 
 class MPV_Message:
     def __init__(self, s):
         self.s = s
     
     def __getattr__(self, command):
-        def send(*param, request_id=None):
-            cmd = MPV_Message._construct_command(self, command, *param, request_id=request_id)
+        def recieve():
+            # Warning: may steal reponses of another process
+            # May throw up hands if the reponse is not a single result json
+            response = bytearray()
+            while response.find(b'\n') < 0:
+                response.extend(self.s.recv(16))
+            result_bytes, _, _ = response.partition(b'\n')
+            result = json.loads(result_bytes)
+            # swallow anything that is not a result
+            if not "error" in result:
+                return recieve()
+            return result["error"] == 'success'
+        def send(*param):
+            command_hyphenated = command.replace('_', '-')
+            cmd = MPV_Message._construct_command(self, command_hyphenated, *param, request_id=None)
             self.s.sendall(cmd.encode())
+            return recieve()
+
         return send
 
     @staticmethod
